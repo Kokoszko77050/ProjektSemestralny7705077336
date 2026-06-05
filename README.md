@@ -1,0 +1,1 @@
+tutaj będzie tekst readme
