@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteka Online</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="app-shell">
+
+    <section class="top-panel">
+      <div class="brand-box">
+        <p class="label">Projekt semestralny</p>
+        <h1>Biblioteka Online</h1>
+        <p>Prosta aplikacja do dodawania, przeglądania, filtrowania, oceniania i komentowania książek.</p>
+      </div>
+
+      <div class="auth-box" id="loginPanel">
+        <div class="section-title small-title">
+          <h2>Logowanie</h2>
+          <p>Zaloguj się lub utwórz konto.</p>
+        </div>
+
+        <form id="authForm" class="auth-form">
+          <input type="email" id="email" placeholder="Email" required>
+          <input type="password" id="password" placeholder="Hasło" required>
+
+          <div class="buttons-row">
+            <button type="submit" class="primary-btn">Zaloguj</button>
+            <button type="button" id="registerBtn" class="secondary-btn">Rejestracja</button>
+          </div>
+
+          <p id="authMessage" class="message"></p>
+        </form>
+      </div>
+
+      <div class="auth-box hidden" id="accountPanel">
+        <div class="section-title small-title">
+          <h2>Ustawienia konta</h2>
+          <p id="userEmailInfo">Zarządzanie kontem użytkownika.</p>
+        </div>
+
+        <div class="account-actions">
+          <input type="password" id="newPassword" placeholder="Nowe hasło">
+          <button class="primary-btn" id="changePasswordBtn">Zmień hasło</button>
+          <button class="secondary-btn" id="logoutBtn2">Wyloguj się</button>
+          <button class="danger-btn" id="deleteAccountBtn">Usuń konto</button>
+        </div>
+
+        <p id="accountMessage" class="message"></p>
+      </div>
+    </section>
+
+    <section class="admin-panel" id="addBookPanel" style="display:none;">
+      <div class="section-title">
+        <h2>Panel administratora - dodaj książkę</h2>
+        <p>Ten formularz jest widoczny tylko dla konta z rolą administratora.</p>
+      </div>
+
+      <form id="addBookForm" class="book-form">
+        <div class="form-group full-width">
+          <label>Nazwa książki</label>
+          <input type="text" name="Nazwa" placeholder="np. Lalka" required>
+        </div>
+
+        <div class="form-group">
+          <label>Autor</label>
+          <input type="text" name="Autor" placeholder="np. Bolesław Prus" required>
+        </div>
+
+        <div class="form-group">
+          <label>Wydawnictwo</label>
+          <input type="text" name="Wydawnictwo" placeholder="np. PWN" required>
+        </div>
+
+        <div class="form-group">
+          <label>Rok wydania</label>
+          <input type="number" name="RokWydania" placeholder="np. 1890" required>
+        </div>
+
+        <div class="form-group">
+          <label>Gatunek</label>
+          <input type="text" name="Genre" placeholder="np. powieść" required>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Opis</label>
+          <textarea name="Opis" rows="3" placeholder="Krótki opis książki"></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label>URL zdjęcia okładki</label>
+          <input type="url" name="ZdjecieURL" placeholder="np. https://example.com/ksiazka.jpg">
+        </div>
+
+        <button type="submit" class="primary-btn full-width">Dodaj książkę</button>
+      </form>
+    </section>
+
+    <section id="mainView" class="main-panel">
+      <div class="library-header">
+        <div>
+          <p class="label-dark">Lista książek</p>
+          <h2>Książki w bibliotece</h2>
+          <p>Filtruj, sortuj i kliknij „Szczegóły”, aby zobaczyć pełny widok książki.</p>
+        </div>
+      </div>
+
+      <div class="tools-bar">
+        <input type="text" id="filterAuthor" placeholder="Autor">
+        <input type="text" id="filterPublisher" placeholder="Wydawnictwo">
+        <input type="number" id="filterYear" placeholder="Rok wydania">
+        <input type="text" id="filterGenre" placeholder="Gatunek">
+
+        <select id="sortBooks">
+          <option value="default">Sortowanie</option>
+          <option value="titleAsc">Nazwa A-Z</option>
+          <option value="titleDesc">Nazwa Z-A</option>
+          <option value="yearAsc">Rok rosnąco</option>
+          <option value="yearDesc">Rok malejąco</option>
+        </select>
+
+        <button id="clearFiltersBtn" class="secondary-btn">Wyczyść</button>
+      </div>
+
+      <div id="booksList" class="books-list"></div>
+    </section>
+
+    <section id="detailsView" class="details-view hidden">
+      <button id="backToListBtn" class="back-btn">← Wróć do listy</button>
+
+      <article class="details-card">
+        <div class="cover-box">
+          <img id="detailImage" src="" alt="">
+          <span id="detailNoCover">Brak okładki</span>
+        </div>
+
+        <div class="details-info">
+          <p class="label-dark">Szczegóły książki</p>
+          <h2 id="detailTitle"></h2>
+
+          <div class="details-grid">
+            <p><strong>Autor:</strong> <span id="detailAuthor"></span></p>
+            <p><strong>Wydawnictwo:</strong> <span id="detailPublisher"></span></p>
+            <p><strong>Rok wydania:</strong> <span id="detailYear"></span></p>
+            <p><strong>Gatunek:</strong> <span id="detailGenre"></span></p>
+          </div>
+
+          <div class="rating-summary">
+            <strong>Średnia ocena:</strong>
+            <span id="averageRating">Brak ocen</span>
+          </div>
+
+          <div class="description-box">
+            <h3>Opis</h3>
+            <p id="detailDescription"></p>
+          </div>
+        </div>
+      </article>
+
+      <section class="comments-panel">
+        <div class="comments-header">
+          <div class="section-title">
+            <h2>Opinie i komentarze</h2>
+            <p>Komentarz można dodać także bez logowania. Wtedy autor będzie widoczny jako „Anonim”.</p>
+          </div>
+
+          <div class="comments-tools">
+            <select id="sortComments">
+              <option value="newest">Najnowsze</option>
+              <option value="ratingDesc">Najwyższa ocena</option>
+              <option value="ratingAsc">Najniższa ocena</option>
+              <option value="authorAsc">Autor A-Z</option>
+            </select>
+
+            <select id="commentsViewMode">
+              <option value="normal">Widok normalny</option>
+              <option value="compact">Widok kompaktowy</option>
+            </select>
+          </div>
+        </div>
+
+        <form id="commentForm" class="comment-form">
+          <div class="form-group">
+            <label>Ocena</label>
+            <select id="commentRating" required>
+              <option value="5">5 - bardzo dobra</option>
+              <option value="4">4 - dobra</option>
+              <option value="3">3 - średnia</option>
+              <option value="2">2 - słaba</option>
+              <option value="1">1 - bardzo słaba</option>
+            </select>
+          </div>
+
+          <div class="form-group comment-text-field">
+            <label>Opinia</label>
+            <textarea id="commentText" rows="3" placeholder="Napisz komentarz lub opinię o książce" required></textarea>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="anonymousComment">
+            <span>Dodaj jako anonim</span>
+          </label>
+
+          <button type="submit" class="primary-btn">Dodaj opinię</button>
+          <p id="commentMessage" class="message"></p>
+        </form>
+
+        <div id="commentsList" class="comments-list"></div>
+      </section>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>
