@@ -13,6 +13,7 @@ app.use(express.json())
 app.use(express.static('projekt_sem_frontend'))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY_ADMIN)
 
 // filtrowanie książek po gatunku
 app.get('/api/ksiazki', async (req, res) => {
@@ -188,7 +189,7 @@ app.delete('/delete-account', async (req, res) => {
   }
 
   const { error: deleteError } =
-    await supabase.auth.admin.deleteUser(user.id)
+    await supabaseAdmin.auth.admin.deleteUser(user.id)
 
   if (deleteError) {
     return res.status(400).json(deleteError)
