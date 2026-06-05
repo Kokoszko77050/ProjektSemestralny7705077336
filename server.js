@@ -36,17 +36,65 @@ app.get('/api/ksiazki', async (req, res) => {
 app.post('/api/ksiazki', async (req, res) => {
   const { Nazwa, Autor, Wydawnictwo, RokWydania, Genre, Opis, ZdjecieURL } = req.body
 
-  if (!Nazwa || !Autor || !Wydawnictwo || !RokWydania || !Genre || !Opis || !ZdjecieURL) {
-    return res.status(400).json({ error: 'Wypełnij wszystkie pola' })
+  if (!Nazwa || !Autor || !Wydawnictwo || !RokWydania || !Genre) {
+    return res.status(400).json({ error: 'Wypełnij wymagane pola' })
   }
 
   const { data, error } = await supabase
     .from('Ksiazki')
-    .insert([{ Nazwa, Autor, Wydawnictwo, RokWydania, Genre, Opis, ZdjecieURL }])
-    .select();
-  if (error) return res.status(500).json({ error: error.message })
+    .insert([{
+      Nazwa,
+      Autor,
+      Wydawnictwo,
+      RokWydania,
+      Genre,
+      Opis: Opis || '',
+      ZdjecieURL: ZdjecieURL || ''
+    }])
+    .select()
 
-  res.status(201).json({ message: 'Książka dodana pomyślnie', book: data[0] })
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  res.status(201).json({
+    message: 'Książka dodana pomyślnie',
+    book: data[0]
+  })
+})
+
+// EDYCJA KSIĄŻKI
+
+app.put('/api/ksiazki/:id', async (req, res) => {
+  const { id } = req.params
+  const { Nazwa, Autor, Wydawnictwo, RokWydania, Genre, Opis, ZdjecieURL } = req.body
+
+  if (!Nazwa || !Autor || !Wydawnictwo || !RokWydania || !Genre) {
+    return res.status(400).json({ error: 'Wypełnij wymagane pola' })
+  }
+
+  const { data, error } = await supabase
+    .from('Ksiazki')
+    .update({
+      Nazwa,
+      Autor,
+      Wydawnictwo,
+      RokWydania,
+      Genre,
+      Opis,
+      ZdjecieURL
+    })
+    .eq('id', id)
+    .select()
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  res.json({
+    message: 'Książka została zaktualizowana',
+    book: data[0]
+  })
 })
 
 // pobieranie komentarzy dla książki
@@ -106,6 +154,25 @@ app.post('/api/ksiazki/:id/komentarze', async (req, res) => {
   res.status(201).json({
     message: 'Komentarz dodany',
     komentarz: data[0]
+  })
+})
+
+// usuwanie komentarza
+app.delete('/api/ksiazki/:id/komentarze/:idKomentarza', async (req, res) => {
+  const { id, idKomentarza } = req.params
+
+  const { error } = await supabase
+    .from('Komentarze')
+    .delete()
+    .eq('id', idKomentarza)
+    .eq('idKsiazki', id)
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  res.json({
+    message: 'Komentarz został usunięty'
   })
 })
 

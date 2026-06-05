@@ -19,6 +19,18 @@ const szczegolyWydawnictwo = document.getElementById('detailPublisher');
 const szczegolyRok = document.getElementById('detailYear');
 const szczegolyGatunek = document.getElementById('detailGenre');
 const szczegolyOpis = document.getElementById('detailDescription');
+
+const panelEdycjiKsiazki = document.getElementById('editBookPanel');
+const formularzEdycjiKsiazki = document.getElementById('editBookForm');
+const komunikatEdycjiKsiazki = document.getElementById('editBookMessage');
+const edycjaNazwa = document.getElementById('editNazwa');
+const edycjaAutor = document.getElementById('editAutor');
+const edycjaWydawnictwo = document.getElementById('editWydawnictwo');
+const edycjaRokWydania = document.getElementById('editRokWydania');
+const edycjaGenre = document.getElementById('editGenre');
+const edycjaOpis = document.getElementById('editOpis');
+const edycjaZdjecieURL = document.getElementById('editZdjecieURL');
+
 const szczegolyBrakZdjecia = document.getElementById('detailNoCover');
 const sredniaOcena = document.getElementById('averageRating');
 
@@ -48,6 +60,7 @@ let wszystkieKsiazki = [];
 let aktualnaKsiazka = null;
 let aktualneKomentarze = [];
 let aktualnyUzytkownik = null;
+let czyAdministrator = false;
 
 // Konfiguracja Supabase jest po stronie backendu.
 const supabaseUrl = 'https://pwcsiarrpkhhcekhtrqz.supabase.co';
@@ -62,6 +75,27 @@ function pobierzPole(obiekt, nazwaPolska, nazwaMala, wartoscDomyslna = '') {
 // Pomocnicza funkcja do pobrania ID książki.
 function pobierzIdKsiazki(ksiazka) {
   return ksiazka?.id ?? ksiazka?.Id ?? ksiazka?.ID ?? ksiazka?.KsiazkaId ?? ksiazka?.ksiazkaId;
+}
+
+// Pomocnicza funkcja do pobrania ID komentarza.
+function pobierzIdKomentarza(komentarz) {
+  return komentarz?.id
+    ?? komentarz?.Id
+    ?? komentarz?.ID
+    ?? komentarz?.KomentarzId
+    ?? komentarz?.komentarzId;
+}
+
+// Sprawdzanie, czy aktualny użytkownik może usunąć komentarz.
+function czyMoznaUsunacKomentarz(komentarz) {
+  const autorKomentarza = pobierzAutoraKomentarza(komentarz);
+  const czyAnonimowy = komentarz.Anonimowy ?? komentarz.anonimowy ?? false;
+
+  if (!aktualnyUzytkownik || czyAnonimowy) {
+    return false;
+  }
+
+  return autorKomentarza === aktualnyUzytkownik.email;
 }
 
 // Pomocnicza funkcja do pobrania autora komentarza.
@@ -142,11 +176,17 @@ function wyswietlKsiazki(ksiazki) {
         <p><strong>Rok:</strong> ${rok}</p>
         <p><strong>Gatunek:</strong> ${gatunek}</p>
         <button class="details-btn">Szczegóły</button>
+        ${czyAdministrator ? '<button class="edit-shortcut-btn">Edytuj</button>' : ''}
       </div>
     `;
 
     const przyciskSzczegolow = kartaKsiazki.querySelector('.details-btn');
     przyciskSzczegolow.addEventListener('click', () => pokazSzczegolyKsiazki(ksiazka));
+
+    const przyciskEdycji = kartaKsiazki.querySelector('.edit-shortcut-btn');
+    if (przyciskEdycji) {
+      przyciskEdycji.addEventListener('click', () => pokazSzczegolyKsiazki(ksiazka));
+    }
 
     listaKsiazek.appendChild(kartaKsiazki);
   });
@@ -267,6 +307,8 @@ function pokazSzczegolyKsiazki(ksiazka) {
   szczegolyGatunek.textContent = gatunek;
   szczegolyOpis.textContent = opis;
 
+  wypelnijFormularzEdycjiKsiazki(ksiazka);
+
   if (zdjecie) {
     szczegolyZdjecie.src = zdjecie;
     szczegolyZdjecie.alt = `Okładka książki ${nazwa}`;
@@ -291,7 +333,91 @@ przyciskPowrotu.addEventListener('click', () => {
   widokGlowny.classList.remove('hidden');
   aktualnaKsiazka = null;
   aktualneKomentarze = [];
+
+  if (komunikatEdycjiKsiazki) {
+    komunikatEdycjiKsiazki.textContent = '';
+  }
 });
+
+
+// Wypełnianie formularza edycji książki dla administratora.
+function wypelnijFormularzEdycjiKsiazki(ksiazka) {
+  if (!panelEdycjiKsiazki || !formularzEdycjiKsiazki) {
+    return;
+  }
+
+  if (!czyAdministrator) {
+    panelEdycjiKsiazki.classList.add('hidden');
+    return;
+  }
+
+  panelEdycjiKsiazki.classList.remove('hidden');
+
+  edycjaNazwa.value = pobierzPole(ksiazka, 'Nazwa', 'nazwa', '');
+  edycjaAutor.value = pobierzPole(ksiazka, 'Autor', 'autor', '');
+  edycjaWydawnictwo.value = pobierzPole(ksiazka, 'Wydawnictwo', 'wydawnictwo', '');
+  edycjaRokWydania.value = pobierzPole(ksiazka, 'RokWydania', 'rokWydania', '');
+  edycjaGenre.value = pobierzPole(ksiazka, 'Genre', 'genre', '');
+  edycjaOpis.value = pobierzPole(ksiazka, 'Opis', 'opis', '');
+  edycjaZdjecieURL.value = pobierzPole(ksiazka, 'ZdjecieURL', 'zdjecieURL', '');
+
+  komunikatEdycjiKsiazki.textContent = '';
+}
+
+// Zapisywanie zmian książki przez administratora.
+if (formularzEdycjiKsiazki) {
+  formularzEdycjiKsiazki.addEventListener('submit', async (zdarzenie) => {
+    zdarzenie.preventDefault();
+
+    const idKsiazki = pobierzIdKsiazki(aktualnaKsiazka);
+
+    if (!czyAdministrator) {
+      komunikatEdycjiKsiazki.textContent = 'Tylko administrator może edytować książki.';
+      return;
+    }
+
+    if (!idKsiazki) {
+      komunikatEdycjiKsiazki.textContent = 'Nie można edytować książki, bo brakuje ID.';
+      return;
+    }
+
+    const daneFormularza = new FormData(formularzEdycjiKsiazki);
+    const daneKsiazki = Object.fromEntries(daneFormularza.entries());
+
+    try {
+      const odpowiedz = await fetch(`/api/ksiazki/${idKsiazki}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(daneKsiazki)
+      });
+
+      let wynik = {};
+      try {
+        wynik = await odpowiedz.json();
+      } catch (bladJson) {
+        wynik = {};
+      }
+
+      if (!odpowiedz.ok) {
+        komunikatEdycjiKsiazki.textContent = wynik.error || 'Nie udało się zapisać zmian.';
+        return;
+      }
+
+      komunikatEdycjiKsiazki.textContent = wynik.message || 'Zmiany zostały zapisane.';
+
+      aktualnaKsiazka = {
+        ...aktualnaKsiazka,
+        ...daneKsiazki
+      };
+
+      await pobierzKsiazki();
+      pokazSzczegolyKsiazki(aktualnaKsiazka);
+    } catch (blad) {
+      console.error('Błąd podczas edycji książki:', blad);
+      komunikatEdycjiKsiazki.textContent = 'Edycja książki będzie działać po podłączeniu endpointu w backendzie.';
+    }
+  });
+}
 
 // Pobieranie komentarzy z backendu.
 async function pobierzKomentarze() {
@@ -374,6 +500,8 @@ function wyswietlKomentarze() {
     const tekstKomentarza = pobierzTrescKomentarza(komentarz);
     const autorKomentarza = pobierzAutoraKomentarza(komentarz);
     const ocena = pobierzOceneKomentarza(komentarz);
+    const idKomentarza = pobierzIdKomentarza(komentarz);
+    const moznaUsunac = czyMoznaUsunacKomentarz(komentarz) && idKomentarza;
 
     const data = komentarz.Data
   ? new Date(komentarz.Data).toLocaleDateString('pl-PL')
@@ -389,7 +517,13 @@ function wyswietlKomentarze() {
         <span class="rating-badge">${ocena ? `Ocena ${ocena}/5` : 'Bez oceny'}</span>
       </div>
       <p>${tekstKomentarza}</p>
+      ${moznaUsunac ? `<button class="delete-comment-btn" data-comment-id="${idKomentarza}">Usuń mój komentarz</button>` : ''}
     `;
+
+    const przyciskUsuwaniaKomentarza = elementKomentarza.querySelector('.delete-comment-btn');
+    if (przyciskUsuwaniaKomentarza) {
+      przyciskUsuwaniaKomentarza.addEventListener('click', () => usunKomentarz(idKomentarza));
+    }
 
     listaKomentarzy.appendChild(elementKomentarza);
   });
@@ -397,6 +531,47 @@ function wyswietlKomentarze() {
 
 sortowanieKomentarzy.addEventListener('change', wyswietlKomentarze);
 widokKomentarzy.addEventListener('change', wyswietlKomentarze);
+
+
+// Usuwanie własnego komentarza.
+async function usunKomentarz(idKomentarza) {
+  const idKsiazki = pobierzIdKsiazki(aktualnaKsiazka);
+
+  if (!idKsiazki || !idKomentarza) {
+    komunikatKomentarza.textContent = 'Nie można usunąć komentarza, bo brakuje ID.';
+    return;
+  }
+
+  const potwierdzenie = confirm('Na pewno usunąć swój komentarz?');
+
+  if (!potwierdzenie) {
+    return;
+  }
+
+  try {
+    const odpowiedz = await fetch(`/api/ksiazki/${idKsiazki}/komentarze/${idKomentarza}`, {
+      method: 'DELETE'
+    });
+
+    let wynik = {};
+    try {
+      wynik = await odpowiedz.json();
+    } catch (bladJson) {
+      wynik = {};
+    }
+
+    if (!odpowiedz.ok) {
+      komunikatKomentarza.textContent = wynik.error || 'Nie udało się usunąć komentarza.';
+      return;
+    }
+
+    komunikatKomentarza.textContent = wynik.message || 'Komentarz został usunięty.';
+    await pobierzKomentarze();
+  } catch (blad) {
+    console.error('Błąd podczas usuwania komentarza:', blad);
+    komunikatKomentarza.textContent = 'Usuwanie komentarza będzie działać po podłączeniu endpointu w backendzie.';
+  }
+}
 
 // Dodawanie komentarza lub opinii.
 formularzKomentarza.addEventListener('submit', async (zdarzenie) => {
@@ -497,7 +672,14 @@ async function sprawdzAdmina() {
   aktualnyUzytkownik = user;
 
   if (!user) {
+    czyAdministrator = false;
     addBookPanel.style.display = 'none';
+
+    if (panelEdycjiKsiazki) {
+      panelEdycjiKsiazki.classList.add('hidden');
+    }
+
+    wyswietlKsiazki(wszystkieKsiazki);
     return;
   }
 
@@ -512,10 +694,22 @@ async function sprawdzAdmina() {
   }
 
   if (profil?.role === 'admin') {
+    czyAdministrator = true;
     addBookPanel.style.display = 'block';
+
+    if (aktualnaKsiazka) {
+      wypelnijFormularzEdycjiKsiazki(aktualnaKsiazka);
+    }
   } else {
+    czyAdministrator = false;
     addBookPanel.style.display = 'none';
+
+    if (panelEdycjiKsiazki) {
+      panelEdycjiKsiazki.classList.add('hidden');
+    }
   }
+
+  wyswietlKsiazki(wszystkieKsiazki);
 }
 
 // Aktualizacja panelu konta po zalogowaniu lub wylogowaniu.
@@ -528,10 +722,18 @@ async function aktualizujPanelKonta() {
     loginPanel.classList.add('hidden');
     accountPanel.classList.remove('hidden');
     userEmailInfo.textContent = `Zalogowano jako: ${user.email}`;
+
+    if (aktualnaKsiazka) {
+      wyswietlKomentarze();
+    }
   } else {
     loginPanel.classList.remove('hidden');
     accountPanel.classList.add('hidden');
     userEmailInfo.textContent = 'Zarządzanie kontem użytkownika.';
+
+    if (aktualnaKsiazka) {
+      wyswietlKomentarze();
+    }
   }
 }
 

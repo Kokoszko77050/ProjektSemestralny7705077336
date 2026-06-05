@@ -157,6 +157,54 @@
             <h3>Opis</h3>
             <p id="detailDescription"></p>
           </div>
+
+          <section class="edit-book-panel hidden" id="editBookPanel">
+            <div class="section-title small-title">
+              <h3>Edycja książki</h3>
+              <p>Ta opcja jest widoczna tylko dla administratora.</p>
+            </div>
+
+            <form id="editBookForm" class="edit-book-form">
+              <div class="form-group full-width">
+                <label>Nazwa książki</label>
+                <input type="text" name="Nazwa" id="editNazwa" required>
+              </div>
+
+              <div class="form-group">
+                <label>Autor</label>
+                <input type="text" name="Autor" id="editAutor" required>
+              </div>
+
+              <div class="form-group">
+                <label>Wydawnictwo</label>
+                <input type="text" name="Wydawnictwo" id="editWydawnictwo" required>
+              </div>
+
+              <div class="form-group">
+                <label>Rok wydania</label>
+                <input type="number" name="RokWydania" id="editRokWydania" required>
+              </div>
+
+              <div class="form-group">
+                <label>Gatunek</label>
+                <input type="text" name="Genre" id="editGenre" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label>Opis</label>
+                <textarea name="Opis" id="editOpis" rows="3"></textarea>
+              </div>
+
+              <div class="form-group full-width">
+                <label>URL zdjęcia okładki</label>
+                <input type="url" name="ZdjecieURL" id="editZdjecieURL">
+              </div>
+
+              <button type="submit" class="primary-btn full-width">Zapisz zmiany</button>
+              <p id="editBookMessage" class="message full-width"></p>
+            </form>
+          </section>
+
         </div>
       </article>
 
